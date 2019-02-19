@@ -40,6 +40,7 @@
 #include <linux/smsc911x.h>
 #endif
 #include <linux/pm.h>
+#include <linux/power_supply.h>
 #include <linux/tegra-powergate.h>
 #include <linux/reboot.h>
 #include <linux/export.h>

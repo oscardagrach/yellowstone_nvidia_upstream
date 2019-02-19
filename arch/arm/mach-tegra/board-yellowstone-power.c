@@ -34,7 +34,7 @@
 #include <linux/tegra-fuse.h>
 #include <linux/tegra-pmc.h>
 #include <linux/power/power_supply_extcon.h>
-#include <linux/power/bq2477x-charger.h>
+#include <linux/power/bq24773-charger.h>
 #include <linux/delay.h>
 #include <linux/pinctrl/pinconf-tegra.h>
 
