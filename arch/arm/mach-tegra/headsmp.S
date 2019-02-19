@@ -125,8 +125,7 @@ cpu_not_secure:
 	str	r1, [r0]
 #endif /* CONFIG_HAVE_ARM_SCU */
 
-#if defined(CONFIG_CACHE_L2X0) && \
-        !defined(CONFIG_TEGRA_USE_SECURE_KERNEL)
+#if defined(CONFIG_CACHE_L2X0)
 	cmp	r12, #1			@ secure firmware present?
 	beq	cpu_resume
 
@@ -175,7 +174,6 @@ cpu_not_secure:
 	str	r2, [r3, #L2X0_AUX_CTRL]
 	mov	r2, #1
 	str	r2, [r3, #L2X0_CTRL]
-#endif /* CONFIG_TEGRA_USE_SECURE_KERNEL */
 #endif /* CONFIG_CACHE_L2X0 */
 no_l2_init:
 	b	cpu_resume
