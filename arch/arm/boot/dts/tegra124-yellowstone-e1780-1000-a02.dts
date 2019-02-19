@@ -1,0 +1,122 @@
+/*
+ * arch/arm/boot/dts/tegra124-yellowstone-p1780-1000-a02.dts
+ *
+ * Copyright (c) 2015, NVIDIA CORPORATION.  All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
+/dts-v1/;
+
+#include "tegra124-yellowstone.dtsi"
+#include "tegra124-platforms/tegra124-yellowstone-emc-e1780-1000-a02.dtsi"
+#include "tegra124-platforms/tegra124-yellowstone-power-tree-e1780-1000-a02.dtsi"
+#include "tegra124-platforms/tegra124-yellowstone-sensors-e1780-1000-a02.dtsi"
+#include "tegra124-platforms/tegra124-yellowstone-pinmux-e1780-1000-a02.dtsi"
+#include "tegra124-platforms/tegra124-yellowstone-gpio-e1780-1000-a02.dtsi"
+#include "tegra124-platforms/tegra124-yellowstone-keys-e1780-1000-a02.dtsi"
+#include "tegra124-platforms/tegra124-yellowstone-sysedp-e1780-1000-a02.dtsi"
+#include "tegra124-platforms/tegra124-yellowstone-powermon-e1780-1000-a02.dtsi"
+#include "panel-j-wuxga-7.dtsi"
+#include "tegra124-platforms/tegra124-yellowstone-hdmi-e1780-1000-a02.dtsi"
+//#include "tegra124-platforms/tegra124-tn8-thermal-zone-p1761-1270-a00.dtsi"
+#include <dt-bindings/iio/meter/ina3221x.h>
+//#include "tegra124-platforms/tegra124-tn8-cmu-p1761-1270-a00.dtsi"
+#include "tegra124-platforms/tegra124-yellowstone-comms.dtsi"
+
+/ {
+	model = "NVIDIA Tegra124 Yellowstone";
+	compatible = "nvidia,ardbeg", "nvidia,tegra124";
+	nvidia,dtsfilename = __FILE__;
+	#address-cells = <2>;
+	#size-cells = <2>;
+
+	chosen {
+		bootargs = "tegraid=40.0.0.00.00 vmalloc=256M video=tegrafb console=ttyS0,115200n8 earlyprintk";
+		linux,initrd-start = <0x85000000>;
+		linux,initrd-end = <0x851bc400>;
+	};
+
+	firmware {
+		android {
+			compatible = "android,firmware";
+			hardware = "ardbeg";
+		};
+	};
+
+	host1x {
+		/* tegradc.0 */
+		dc@54200000 {
+			status = "okay";
+			nvidia,dc-flags = <TEGRA_DC_FLAG_ENABLED>;
+			nvidia,emc-clk-rate = <204000000>;
+			nvidia,cmu-enable = <1>;
+			nvidia,low-v-win = <0x2>;
+			nvidia,fb-bpp = <32>; /* bits per pixel */
+			nvidia,fb-flags = <TEGRA_FB_FLIP_ON_PROBE>;
+		};
+		/* tegradc.1 */
+		dc@54240000 {
+			status = "okay";
+			nvidia,dc-flags = <TEGRA_DC_FLAG_ENABLED>;
+			nvidia,emc-clk-rate = <300000000>;
+			nvidia,cmu-enable = <0>;
+			nvidia,fb-bpp = <32>; /* bits per pixel */
+			nvidia,fb-flags = <TEGRA_FB_FLIP_ON_PROBE>;
+		};
+		dsi {
+			nvidia,dsi-controller-vs = <DSI_VS_1>;
+			status = "okay";
+			panel-j-wuxga-7 {
+				nvidia,dsi-boardinfo = <1627 0 0 0>;
+				nvidia,panel-rst-gpio = <&gpio TEGRA_GPIO(H, 3) 0>; /* PH3 */
+				nvidia,panel-bl-pwm-gpio = <&gpio TEGRA_GPIO(H, 1) 0>; /* PH1 */
+				disp-default-out {
+					nvidia,out-rotation = <270>;
+				};
+			};
+		};
+	};
+
+	i2c@7000c400 {
+		status = "okay";
+		clock-frequency = <100000>;
+
+		bq28z610@55 {
+			compatible = "ti,bq28z610";
+			reg = <0x55>;
+			tz-name = "battery-temp";
+			alert-threshold = <0x0>;
+			one-percent-alerts = <0x1>;
+			valert-max = <0x13ec>;
+			valert-min = <0x0>;
+			vreset-threshold = <0x960>;
+			vreset-disable = <0x1>;
+			hib-threshold = <0x30>;
+			hib-active-threshold = <0x80>;
+			bits = <0x12>;
+			rcomp = <0x39>;
+			rcomp-seg = <0x200>;
+			soccheck-a = <0x77>;
+			soccheck-b = <0x79>;
+			ocvtest = <0xda90>;
+			data-tbl = <0x98 0x80 0xb3 0x50 0xb7 0x90 0xb9 0x0 0xba 0x70 0xbc 0x10 0xbc 0x50 0xbc 0xa0 0xbd 0x20 0xbe 0x30 0xbf 0x40 0xc2 0xf0 0xc4 0x20 0xc7 0xe0 0xcb 0xf0 0xd0 0x90 0x0 0x40 0x6 0x70 0xe 0x50 0x12 0x0 0x18 0xd0 0x33 0x10 0x31 0x40 0x35 0xd0 0x18 0xd0 0x19 0x0 0xb 0xf0 0xc 0x10 0xd 0x10 0x7 0x90 0x8 0x0 0x8 0x0>;
+		};
+	};
+
+	sysedp_batmon_calc {
+		status = "okay";
+	};
+};
