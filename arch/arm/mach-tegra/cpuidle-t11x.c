@@ -44,6 +44,7 @@
 #include <linux/tegra-timer.h>
 #include <linux/tegra-cpuidle.h>
 #include <linux/irqchip/tegra.h>
+#include <linux/tegra_sm.h>
 #include <uapi/linux/psci.h>
 
 #include <asm/cacheflush.h>
@@ -463,6 +464,11 @@ static int tegra_cpu_core_power_down(struct cpuidle_device *dev,
 		return CPUIDLE_STATE_CLKGATING;
 	}
 
+#ifdef CONFIG_TEGRA_USE_SECURE_KERNEL
+	if (tegra_sm_is_locked())
+		return false;
+#endif
+
 #ifdef CONFIG_TEGRA_LP2_CPU_TIMER
 	cntfrq = tegra_clk_measure_input_freq();
 	cntp_tval = (request - state->exit_latency) * (cntfrq / 1000000);
@@ -482,6 +488,14 @@ static int tegra_cpu_core_power_down(struct cpuidle_device *dev,
 	/* Save time this CPU must be awakened by. */
 	tegra_cpu_wake_by_time[dev->cpu] = ktime_to_us(entry_time) + request;
 	smp_wmb();
+
+#ifdef CONFIG_TEGRA_USE_SECURE_KERNEL
+	if ((cpu == 0) || (cpu == 4)) {
+		tegra_sm_generic(0x84000001, ((1 << 16) | 5),
+				(TEGRA_RESET_HANDLER_BASE +
+				tegra_cpu_reset_handler_offset));
+	}
+#endif
 
 	/* enter power down state */
 	cpu_suspend(0, tegra_cpu_core_power_down_fin);

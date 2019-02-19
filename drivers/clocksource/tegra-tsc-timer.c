@@ -91,6 +91,9 @@ void __init tegra_cpu_timer_init(void)
 
 static void tegra_arch_timer_per_cpu_init(void)
 {
+#ifdef CONFIG_TEGRA_USE_SECURE_KERNEL
+	return;
+#else
 	if (tegra_cpu_is_secure())
 		return;
 
@@ -108,6 +111,7 @@ static void tegra_arch_timer_per_cpu_init(void)
 		   NOTE: this is a write once (per CPU reset) register. */
 		__asm__("mcr p15, 0, %0, c14, c0, 0\n" : : "r" (tsc_ref_freq));
 	}
+#endif /* CONFIG_TEGRA_USE_SECURE_KERNEL */
 }
 
 static int arch_timer_cpu_notify(struct notifier_block *self,

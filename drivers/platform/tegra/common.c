@@ -47,6 +47,7 @@
 #include <linux/tegra-soc.h>
 #include <linux/dma-contiguous.h>
 #include <linux/tegra-fuse.h>
+#include <linux/tegra_sm.h>
 #ifdef CONFIG_TRUSTED_LITTLE_KERNEL
 #include <linux/ote_protocol.h>
 #endif
@@ -564,6 +565,7 @@ static __initdata struct tegra_clk_init_table tegra12x_sbus_init_table[] = {
 #endif
 
 #ifdef CONFIG_CACHE_L2X0
+#ifdef CONFIG_TEGRA_USE_SECURE_KERNEL
 static void tegra_cache_smc(bool enable, u32 arg)
 {
 	void __iomem *p = IO_ADDRESS(TEGRA_ARM_PL310_BASE);
@@ -601,10 +603,17 @@ static void tegra_cache_smc(bool enable, u32 arg)
 
 	local_irq_save(flags);
 	l2x0_enabled = readl_relaxed(p + L2X0_CTRL) & 1;
+#ifdef CONFIG_TEGRA_USE_SECURE_KERNEL
+	if (enable && !l2x0_enabled)
+		tegra_sm_generic(0x82000002, 0x00000001, arg);
+	else if (!enable && l2x0_enabled)
+		tegra_sm_generic(0x82000002, 0x00000002, arg);
+#else
 	if (enable && !l2x0_enabled)
 		tegra_generic_smc(0x82000002, 0x00000001, arg);
 	else if (!enable && l2x0_enabled)
 		tegra_generic_smc(0x82000002, 0x00000002, arg);
+#endif /* CONFIG_TEGRA_USE_SECURE_KERNEL */
 	local_irq_restore(flags);
 
 	if (need_affinity_switch && can_switch_affinity) {
@@ -632,14 +641,31 @@ static void tegra_l2x0_disable(void)
 	tegra_cache_smc(false, l2x0_way_mask);
 	local_irq_restore(flags);
 }
+#endif /* CONFIG_TEGRA_USE_SECURE_KERNEL */
 
 void tegra_init_cache(bool init)
 {
 	void __iomem *p = IO_ADDRESS(TEGRA_ARM_PL310_BASE);
 	u32 aux_ctrl;
+#ifndef CONFIG_TEGRA_USE_SECURE_KERNEL
 	u32 cache_type;
 	u32 tag_latency, data_latency;
+#endif /* CONFIG_TEGRA_USE_SECURE_KERNEL */
 
+#ifdef CONFIG_TEGRA_USE_SECURE_KERNEL
+	/* issue the SMC to enable the L2 */
+	aux_ctrl = readl_relaxed(p + L2X0_AUX_CTRL);
+	trace_smc_init_cache(NVSEC_SMC_START);
+	tegra_cache_smc(true, aux_ctrl);
+	trace_smc_init_cache(NVSEC_SMC_DONE);
+
+	/* after init, reread aux_ctrl and register handlers */
+	aux_ctrl = readl_relaxed(p + L2X0_AUX_CTRL);
+	l2x0_init(p, aux_ctrl, 0xFFFFFFFF);
+
+	/* override outer_disable() with our disable */
+	outer_cache.disable = tegra_l2x0_disable;
+#else
 	if (tegra_cpu_is_secure()) {
 		/* issue the SMC to enable the L2 */
 		aux_ctrl = readl_relaxed(p + L2X0_AUX_CTRL);
@@ -694,6 +720,7 @@ void tegra_init_cache(bool init)
 		}
 		l2x0_enable();
 	}
+#endif /* CONFIG_TEGRA_USE_SECURE_KERNEL */
 }
 #endif
 

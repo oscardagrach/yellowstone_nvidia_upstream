@@ -50,12 +50,13 @@
  */
 	__CPUINIT
 ENTRY(tegra_secondary_startup)
+#ifndef CONFIG_TEGRA_USE_SECURE_KERNEL
 	ldr	r0, =tegra_with_secure_firmware
 	sub	r0, #(PAGE_OFFSET - TEGRA_DRAM_BASE)
 	ldr	r12, [r0]
-
+#endif /* CONFIG_TEGRA_USE_SECURE_KERNEL */
 	bl	__invalidate_cpu_state
-
+#ifndef CONFIG_TEGRA_USE_SECURE_KERNEL
 	cmp	r12, #1			@ secure firmware present?
 	beq	secondary_startup
 
@@ -71,7 +72,7 @@ ENTRY(tegra_secondary_startup)
 	mcr	p15, 0, r1, c9, c14, 2
 	mov	r0, #1
 	mcr	p15, 0, r0, c9, c14, 0
-
+#endif /* CONFIG_TEGRA_USE_SECURE_KERNEL */
 	b	secondary_startup
 ENDPROC(tegra_secondary_startup)
 #endif
@@ -86,12 +87,13 @@ ENDPROC(tegra_secondary_startup)
  *	  re-enabling sdram.
  */
 ENTRY(tegra_resume)
+#ifndef CONFIG_TEGRA_USE_SECURE_KERNEL
 	ldr	r0, =tegra_with_secure_firmware
 	sub	r0, #(PAGE_OFFSET - TEGRA_DRAM_BASE)
 	ldr	r12, [r0]
 	cmp	r12, #1
 	bne	cpu_not_secure
-
+#endif /* CONFIG_TEGRA_USE_SECURE_KERNEL */
 	mov32	r1, TEGRA_TMRUS_BASE
 	ldr	r0, [r1]
 	adr	r1, tegra_resume_entry_time
@@ -123,7 +125,8 @@ cpu_not_secure:
 	str	r1, [r0]
 #endif /* CONFIG_HAVE_ARM_SCU */
 
-#ifdef CONFIG_CACHE_L2X0
+#if defined(CONFIG_CACHE_L2X0) && \
+        !defined(CONFIG_TEGRA_USE_SECURE_KERNEL)
 	cmp	r12, #1			@ secure firmware present?
 	beq	cpu_resume
 
@@ -172,6 +175,7 @@ cpu_not_secure:
 	str	r2, [r3, #L2X0_AUX_CTRL]
 	mov	r2, #1
 	str	r2, [r3, #L2X0_CTRL]
+#endif /* CONFIG_TEGRA_USE_SECURE_KERNEL */
 #endif /* CONFIG_CACHE_L2X0 */
 no_l2_init:
 	b	cpu_resume
@@ -228,7 +232,7 @@ __invalidate_cpu_state:
 
 	cmp	r12, #1			@ secure firmware present?
 	beq	__enable_i_cache_branch_pred
-
+#ifndef CONFIG_TEGRA_USE_SECURE_KERNEL
 	mrc	p15, 0x1, r0, c15, c0, 3	@ L2 prefetch control reg
 	tst	r0, #0x1000
 	orreq	r0, r0, #0x1000			@ disable throttling
@@ -256,7 +260,7 @@ __invalidate_cpu_state:
 	mrc	p15, 0x1, r0, c15, c0, 0	@ L2 ACTLR
 	orr	r0, r0, #0x80			@ hazard detection timeout
 	mcr	p15, 0x1, r0, c15, c0, 0
-
+#endif /* CONFIG_TEGRA_USE_SECURE_KERNEL */
 __enable_i_cache_branch_pred:
 	mrc	p15, 0, r0, c1, c0, 0
 	orr	r0, r0, #0x1800
@@ -373,7 +377,7 @@ ENTRY(__tegra_cpu_reset_handler)
 #if DEBUG_CPU_RESET_HANDLER
 	b	.
 #endif
-
+#ifndef CONFIG_TEGRA_USE_SECURE_KERNEL
 	adr	r12, __tegra_cpu_reset_handler_data
 	ldr	r7, [r12, #RESET_DATA(SECURE_FW_PRESENT)]
 	cmp	r7, #1 			@ if !secure
@@ -394,7 +398,7 @@ ENTRY(__tegra_cpu_reset_handler)
 	orreq	r10, r10, #1 << 6		@ set bit #6
 	mcreq	p15, 0, r10, c15, c0, 1		@ write diagnostic register
 #endif
-
+#endif /* CONFIG_TEGRA_USE_SECURE_KERNEL */
 cpu_is_secure:
 	mrc	p15, 0, r10, c0, c0, 5		@ MPIDR
 	and	r10, r10, #0x3			@ R10 = CPU number

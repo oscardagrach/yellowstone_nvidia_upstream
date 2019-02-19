@@ -209,6 +209,16 @@ ENDPROC(tegra_flush_l1_cache)
  * tegra?_tear_down_cpu
  */
 ENTRY(tegra_sleep_cpu_finish)
+#ifdef CONFIG_TEGRA_USE_SECURE_KERNEL
+    mov     r4, r0
+    ldr     r0, =0x84000001
+    ldr     r1, ((1 << 16) | 4)
+    ldr     r2, =TEGRA_RESET_HANDLER_BASE
+    bl      tegra_sm_generic
+
+    bl      tegra_flush_cache
+    mov     r0, r4
+#endif /* CONFIG_TEGRA_USE_SECURE_KERNEL */
 	bl	tegra_cpu_exit_coherency
 
 #ifdef CONFIG_ARCH_TEGRA_2x_SOC
@@ -289,7 +299,8 @@ tegra_shut_off_mmu:
 	dsb
 	mcr	p15, 0, r3, c1, c0, 0
 	isb
-#if defined(CONFIG_CACHE_L2X0)
+#if defined(CONFIG_CACHE_L2X0) && \
+		!defined(CONFIG_TEGRA_USE_SECURE_KERNEL)
 	ldr	r1, =tegra_with_secure_firmware
 	ldr	r1, [r1]
 	cmp	r1, #1
@@ -302,7 +313,7 @@ tegra_shut_off_mmu:
 	mov	r2, #0
 	str	r2, [r1, #L2X0_CACHE_SYNC]
 	str	r2, [r1, #L2X0_CTRL]
-#endif /* CONFIG_CACHE_L2X0 */
+#endif /* CONFIG_CACHE_L2X0 && !CONFIG_TEGRA_USE_SECURE_KERNEL */
 2:	mov	pc, r0
 
 /*

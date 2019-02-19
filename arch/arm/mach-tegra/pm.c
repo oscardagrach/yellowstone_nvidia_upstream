@@ -56,6 +56,7 @@
 #include <linux/tegra-pm.h>
 #include <linux/tegra-pmc.h>
 #include <linux/tegra_pm_domains.h>
+#include <linux/tegra_sm.h>
 #include <linux/tegra_smmu.h>
 #include <linux/kmemleak.h>
 #include <uapi/linux/psci.h>
@@ -736,6 +737,16 @@ static inline int tegra_stop_mc_clk_fin(unsigned long v2p)
 		BUG();
 	}
 #endif
+#if defined(CONFIG_TEGRA_USE_SECURE_KERNEL)
+	outer_flush_range(__pa(&tegra_resume_timestamps_start),
+			__pa(&tegra_resume_timestamps_end));
+	trace_smc_sleep_core(NVSEC_SMC_START);
+
+	tegra_sm_generic(0x84000001, ((1 << 16) | 3),
+			(TEGRA_RESET_HANDLER_BASE +
+				tegra_cpu_reset_handler_offset));
+	trace_smc_sleep_core(NVSEC_SMC_DONE);
+#endif
 
 	tegra3_stop_mc_clk_finish(v2p);
 	return 0;
@@ -822,6 +833,16 @@ unsigned int tegra_idle_power_down_last(unsigned int sleep_time,
 	cpu_cluster_pm_enter();
 	suspend_cpu_complex(flags);
 	tegra_cluster_switch_time(flags, tegra_cluster_switch_time_id_prolog);
+#if defined(CONFIG_TEGRA_USE_SECURE_KERNEL)
+	flush_cache_all();
+	outer_disable();
+
+	tegra_resume_l2_init = 1;
+	__cpuc_flush_dcache_area(&tegra_resume_l2_init,
+		sizeof(unsigned long));
+	outer_flush_range(__pa(&tegra_resume_l2_init),
+		__pa(&tegra_resume_l2_init) + sizeof(unsigned long));
+#else
 #if defined(CONFIG_CACHE_L2X0)
 	if (tegra_cpu_is_secure()) {
 		flush_cache_all();
@@ -835,6 +856,7 @@ unsigned int tegra_idle_power_down_last(unsigned int sleep_time,
 			  __pa(&tegra_resume_l2_init) + sizeof(unsigned long));
 	}
 #endif
+#endif /* CONFIG_TEGRA_USE_SECURE_KERNEL */
 
 	/* T148: Check for mem_req and mem_req_soon only if it is
 	 * MC clock stop state.
@@ -847,10 +869,12 @@ unsigned int tegra_idle_power_down_last(unsigned int sleep_time,
 	} else {
 		cpu_suspend(PHYS_OFFSET - PAGE_OFFSET, tegra_sleep_cpu_fin);
 	}
-
+#if defined(CONFIG_TEGRA_USE_SECURE_KERNEL)
+	tegra_init_cache(false);
+#else
 	if (tegra_cpu_is_secure())
 		tegra_init_cache(false);
-
+#endif /* CONFIG_TEGRA_USE_SECURE_KERNEL */
 #if defined(CONFIG_TRUSTED_FOUNDATIONS)
 #ifndef CONFIG_ARCH_TEGRA_11x_SOC
 	trace_smc_wake(tegra_resume_smc_entry_time, NVSEC_SMC_START);
@@ -1183,6 +1207,25 @@ static inline int tegra_sleep_core_fin(unsigned long id)
 		BUG();
 	}
 #endif
+#if defined(CONFIG_TEGRA_USE_SECURE_KERNEL)
+	outer_flush_range(__pa(&tegra_resume_timestamps_start),
+				__pa(&tegra_resume_timestamps_end));
+
+	if (mode == TEGRA_SUSPEND_LP0) {
+		trace_smc_sleep_core(NVSEC_SMC_START);
+
+		tegra_sm_generic(0x84000001, ((1 << 16) | (1 << 24) | 1),
+				virt_to_phys(tegra_resume));
+	} else {
+		trace_smc_sleep_core(NVSEC_SMC_START);
+
+		tegra_sm_generic(0x84000001, ((1 << 16) | 2),
+				 (TEGRA_RESET_HANDLER_BASE +
+					tegra_cpu_reset_handler_offset));
+	}
+
+	trace_smc_sleep_core(NVSEC_SMC_DONE);
+#endif /* CONFIG_TEGRA_USE_SECURE_KERNEL */
 
 	tegra3_sleep_core_finish(PHYS_OFFSET - PAGE_OFFSET);
 	return 0;
@@ -1290,7 +1333,7 @@ int tegra_suspend_dram(enum tegra_suspend_mode mode, unsigned int flags)
 		resume_entry_time = tegra_read_usec_raw();
 
 	tegra_init_cache(true);
-
+#ifndef CONFIG_TEGRA_USE_SECURE_KERNEL
 	if (tegra_cpu_is_secure()) {
 #ifndef CONFIG_ARCH_TEGRA_11x_SOC
 		trace_smc_wake(tegra_resume_smc_entry_time, NVSEC_SMC_START);
@@ -1302,6 +1345,12 @@ int tegra_suspend_dram(enum tegra_suspend_mode mode, unsigned int flags)
 				NVSEC_SUSPEND_EXIT_DONE);
 		}
 	}
+#else
+	if (mode == TEGRA_SUSPEND_LP0) {
+		trace_secureos_init(tegra_resume_entry_time,
+				NVSEC_SUSPEND_EXIT_DONE);
+	}
+#endif /* CONFIG_TEGRA_USE_SECURE_KERNEL */
 
 	if (mode == TEGRA_SUSPEND_LP0) {
 
@@ -1959,6 +2008,10 @@ late_initcall(tegra_pm_core_debug_init);
 #ifdef CONFIG_DEBUG_RODATA
 void set_platform_text_rw(void)
 {
+#ifdef CONFIG_TEGRA_USE_SECURE_KERNEL
+	set_memory_rw(unsigned long)tegra_sm_generic, 1);
+#else
 	set_memory_rw((unsigned long)tegra_restart_prev_smc, 1);
+#endif /* CONFIG_TEGRA_USE_SECURE_KERNEL */
 }
 #endif

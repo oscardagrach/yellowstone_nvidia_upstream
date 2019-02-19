@@ -20,6 +20,7 @@
 #include <linux/bitops.h>
 #include <linux/tegra-soc.h>
 #include <linux/tegra-fuse.h>
+#include <linux/tegra_sm.h>
 
 #include <asm/cacheflush.h>
 #include <asm/psci.h>
@@ -39,17 +40,22 @@ static bool is_enabled;
 static void tegra_cpu_reset_handler_enable(void)
 {
 	void __iomem *iram_base = IO_ADDRESS(TEGRA_IRAM_BASE);
+#ifndef CONFIG_TEGRA_USE_SECURE_KERNEL
 	void __iomem *evp_cpu_reset =
 		IO_ADDRESS(TEGRA_EXCEPTION_VECTORS_BASE + 0x100);
 	void __iomem *sb_ctrl = IO_ADDRESS(TEGRA_SB_BASE);
 	unsigned long reg;
-
+#endif /* CONFIG_TEGRA_USE_SECURE_KERNEL */
 	BUG_ON(is_enabled);
 	BUG_ON(tegra_cpu_reset_handler_size > TEGRA_RESET_HANDLER_SIZE);
 
 	memcpy(iram_base, (void *)__tegra_cpu_reset_handler_start,
 		tegra_cpu_reset_handler_size);
 
+#ifdef CONFIG_TEGRA_USE_SECURE_KERNEL
+    tegra_sm_generic(0x82000001,
+            TEGRA_RESET_HANDLER_BASE + tegra_cpu_reset_handler_offset, 0);
+#else
 	/* NOTE: This must be the one and only write to the EVP CPU
 	 * reset vector in the entire system. */
 	writel(TEGRA_RESET_HANDLER_BASE +
@@ -69,6 +75,7 @@ static void tegra_cpu_reset_handler_enable(void)
 	}
 
 	is_enabled = true;
+#endif /* CONFIG_TEGRA_USE_SECURE_KERNEL */
 }
 
 #ifdef CONFIG_PM_SLEEP
