@@ -106,6 +106,7 @@ obj-y                                   += panel-c-lvds-1366-14.o
 obj-y                                   += panel-a-1080p-14-0.o
 obj-y                                   += panel-j-1440-810-5-8.o
 obj-y                                   += panel-j-720p-5.o
+obj-y									+= panel-j-wuxga-7.o
 obj-y                                   += panel-l-720p-5-loki.o
 obj-y                                   += panel-s-edp-uhdtv-15-6.o
 obj-y                                   += panel-o-720p-6-0.o
@@ -128,6 +129,7 @@ obj-${CONFIG_MACH_YELLOWSTONE}          += board-yellowstone.o
 obj-${CONFIG_MACH_YELLOWSTONE}          += board-yellowstone-sdhci.o
 obj-${CONFIG_MACH_YELLOWSTONE}          += board-yellowstone-sensors.o
 obj-${CONFIG_MACH_YELLOWSTONE}          += board-yellowstone-power.o
+obj-${CONFIG_MACH_YELLOWSTONE}          += panel-j-wuxga-7.o
 
 obj-${CONFIG_MACH_LOKI}               	+= board-loki.o
 obj-${CONFIG_MACH_LOKI}               	+= board-loki-kbc.o
