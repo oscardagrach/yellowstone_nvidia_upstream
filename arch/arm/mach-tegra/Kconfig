@@ -263,6 +263,13 @@ config TEGRA_FIQ_DEBUGGER
 	help
 	  Enables the FIQ serial debugger on Tegra
 
+config TEGRA_USE_SECURE_KERNEL
+	bool "Enable old TLK for Yellowstone"
+	default y
+	depends on MACH_YELLOWSTONE
+	help
+	  Enables support for old TLK and SMC for power management
+
 config TEGRA_PTM
 	bool "Enable PTM debugger on Tegra"
 	default n

@@ -837,11 +837,6 @@ unsigned int tegra_idle_power_down_last(unsigned int sleep_time,
 	flush_cache_all();
 	outer_disable();
 
-	tegra_resume_l2_init = 1;
-	__cpuc_flush_dcache_area(&tegra_resume_l2_init,
-		sizeof(unsigned long));
-	outer_flush_range(__pa(&tegra_resume_l2_init),
-		__pa(&tegra_resume_l2_init) + sizeof(unsigned long));
 #else
 #if defined(CONFIG_CACHE_L2X0)
 	if (tegra_cpu_is_secure()) {
@@ -1187,9 +1182,9 @@ static void tegra_suspend_powergate_control(int partid, bool turn_off)
 
 static inline int tegra_sleep_core_fin(unsigned long id)
 {
-#if defined(CONFIG_ARM_PSCI)
 	enum tegra_suspend_mode mode = ((id == TEGRA_SUSPEND_LP0) ?
 		TEGRA_ID_CPU_SUSPEND_LP0 : TEGRA_ID_CPU_SUSPEND_LP1);
+#if defined(CONFIG_ARM_PSCI)
 	struct psci_power_state pps = {
 		.id = (u16)mode,
 		.type = PSCI_POWER_STATE_TYPE_POWER_DOWN,
