@@ -66,7 +66,7 @@
 #include "hdmivrr.h"
 
 #ifdef CONFIG_OF
-/* #define OF_DC_DEBUG	1 */
+#define OF_DC_DEBUG	1
 
 #undef OF_DC_LOG
 #ifdef OF_DC_DEBUG

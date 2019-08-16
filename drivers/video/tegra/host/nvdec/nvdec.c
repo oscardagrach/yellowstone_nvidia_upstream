@@ -325,8 +325,10 @@ int nvhost_nvdec_finalize_poweron(struct platform_device *dev)
 
 	dev_dbg(&dev->dev, "nvdec_boot: success\n");
 
+#ifndef CONFIG_MACH_YELLOWSTONE
 #ifdef CONFIG_TRUSTED_LITTLE_KERNEL
 	te_restore_keyslots();
+#endif
 #endif
 
 	return 0;

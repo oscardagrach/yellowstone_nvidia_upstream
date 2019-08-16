@@ -631,6 +631,10 @@ static struct device_node
 	if (pdata)
 		dc_out = pdata->default_out;
 
+#ifdef CONFIG_MACH_YELLOWSTONE
+	display_board.board_id = BOARD_E1627;
+#endif
+
 	switch (display_board.board_id) {
 	case BOARD_E1627:
 	case BOARD_E1797:

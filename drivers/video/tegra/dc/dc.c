@@ -3306,8 +3306,10 @@ static void tegra_dc_vrr_sec(struct tegra_dc *dc)
 		vrr->fe_intr_req = 0;
 	}
 
+#ifndef CONFIG_MACH_YELLOWSTONE
 #ifdef CONFIG_TRUSTED_LITTLE_KERNEL
 	tegra_hdmivrr_te_vrr_sec(vrr);
+#endif
 #endif
 	/* Increment frame end interrupt refcount requested
 	   by secure library */
