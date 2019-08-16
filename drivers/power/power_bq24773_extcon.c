@@ -37,17 +37,18 @@
 #define DRIVER_NAME "power_bq2477x_extcon"
 
 struct bq2477x_extcon {
-	struct device				*dev;
-	struct extcon_dev			*edev;
+	struct device *dev;
+	struct device *parent;
+	struct extcon_dev edev;
 	int dock_usb3_gpio;
 	int dock_usb3_active_high;
 	int dock_12v_gpio;
 	int dock_12v_gpio_active_high;
 	struct delayed_work dock_work;
-	struct regulator_dev		*chg_rdev;
-	struct regulator_desc		chg_reg_desc;
-	struct regulator_init_data	chg_reg_init_data;
-	struct regulator_consumer_supply  chg_consumer_supply[4];
+	struct regulator_dev *chg_rdev;
+	struct regulator_desc chg_reg_desc;
+	struct regulator_init_data chg_reg_init_data;
+	struct regulator_consumer_supply chg_consumer_supply[4];
 	int max_current_ua;
 };
 
@@ -69,10 +70,10 @@ static void tegra_bq2477x_dock_helper(struct bq2477x_extcon *psy_extcon)
 
 	if (state) {
 		dev_info(psy_extcon->dev, "12V DOCK CONNECTED\n");
-		extcon_set_cable_state(psy_extcon->edev, "Dock-12V", true);
+		extcon_set_cable_state(&psy_extcon->edev, "Dock-12V", true);
 	} else {
 		dev_info(psy_extcon->dev, "12V DOCK DISCONNECTED\n");
-		extcon_set_cable_state(psy_extcon->edev, "Dock-12V", false);
+		extcon_set_cable_state(&psy_extcon->edev, "Dock-12V", false);
 	}
 }
 
@@ -192,13 +193,14 @@ static int bq2477x_extcon_probe(struct platform_device *pdev)
 		return -ENODEV;
 	}
 
-	psy_extcon = devm_kzalloc(&pdev->dev, sizeof(*psy_extcon), GFP_KERNEL);
+	psy_extcon = devm_kzalloc(&pdev->dev, sizeof(struct bq2477x_extcon), GFP_KERNEL);
 	if (!psy_extcon) {
 		dev_err(&pdev->dev, "failed to allocate memory status\n");
 		return -ENOMEM;
 	}
 
 	psy_extcon->dev = &pdev->dev;
+	psy_extcon->parent = pdev->dev.parent;
 	dev_set_drvdata(&pdev->dev, psy_extcon);
 
 	psy_extcon->dock_usb3_gpio = pdata->dock_usb3_gpio;
@@ -214,24 +216,15 @@ static int bq2477x_extcon_probe(struct platform_device *pdev)
 	dev_info(&pdev->dev, "%s: dock_12v_gpio = %d, dock_12v_gpio_active_high = %d\n",
 		__func__, psy_extcon->dock_12v_gpio,
 		psy_extcon->dock_12v_gpio_active_high);
-	
 
-	/* External connector */
-	psy_extcon->edev = kzalloc(sizeof(struct extcon_dev), GFP_KERNEL);
-	if (!psy_extcon->edev) {
-		dev_err(&pdev->dev, "failed to allocate memory for extcon\n");
-		ret = -ENOMEM;
-		goto econ_err;
-	}
-
-	psy_extcon->edev->name = DRIVER_NAME;
-	psy_extcon->edev->supported_cable =
+	psy_extcon->edev.name = DRIVER_NAME;
+	psy_extcon->edev.supported_cable =
 			(const char **) tegra_bq2477x_extcon_cable;
-	ret = extcon_dev_register(psy_extcon->edev);
+	psy_extcon->edev.dev.parent = &pdev->dev;
+	ret = extcon_dev_register(&psy_extcon->edev);
 	if (ret) {
 		dev_err(&pdev->dev, "failed to register extcon device\n");
-		kfree(psy_extcon->edev);
-		psy_extcon->edev = NULL;
+		return ret;
 	}
 
 	INIT_DELAYED_WORK(&psy_extcon->dock_work, tegra_bq2477x_set_dock_work);
