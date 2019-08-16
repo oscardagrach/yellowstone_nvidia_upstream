@@ -38,7 +38,7 @@
 
 / {
 	model = "NVIDIA Tegra124 Yellowstone";
-	compatible = "nvidia,ardbeg", "nvidia,tegra124";
+	compatible = "nvidia,yellowstone", "nvidia,tegra124";
 	nvidia,dtsfilename = __FILE__;
 	#address-cells = <2>;
 	#size-cells = <2>;
@@ -52,7 +52,7 @@
 	firmware {
 		android {
 			compatible = "android,firmware";
-			hardware = "ardbeg";
+			hardware = "yellowstone";
 		};
 	};
 
@@ -72,21 +72,12 @@
 			status = "okay";
 			nvidia,dc-flags = <TEGRA_DC_FLAG_ENABLED>;
 			nvidia,emc-clk-rate = <300000000>;
-			nvidia,cmu-enable = <0>;
 			nvidia,fb-bpp = <32>; /* bits per pixel */
 			nvidia,fb-flags = <TEGRA_FB_FLIP_ON_PROBE>;
 		};
 		dsi {
 			nvidia,dsi-controller-vs = <DSI_VS_1>;
 			status = "okay";
-			panel-j-wuxga-7 {
-				nvidia,dsi-boardinfo = <1627 0 0 0>;
-				nvidia,panel-rst-gpio = <&gpio TEGRA_GPIO(H, 3) 0>; /* PH3 */
-				nvidia,panel-bl-pwm-gpio = <&gpio TEGRA_GPIO(H, 1) 0>; /* PH1 */
-				disp-default-out {
-					nvidia,out-rotation = <270>;
-				};
-			};
 		};
 	};
 
