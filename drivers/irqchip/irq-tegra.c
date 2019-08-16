@@ -96,7 +96,7 @@ static bool tegra_irq_range_valid(int irq)
 }
 
 #ifdef CONFIG_FIQ
-#if !defined(CONFIG_ARCH_TEGRA_12x_SOC) && !defined(CONFIG_ARCH_TEGRA_13x_SOC)
+#if !defined(CONFIG_ARCH_TEGRA_12x_SOC) && !defined(CONFIG_ARCH_TEGRA_13x_SOC) || defined(CONFIG_TEGRA_USE_SECURE_KERNEL)
 static void tegra_legacy_select_fiq(unsigned int irq, bool fiq)
 {
 	void __iomem *base;
@@ -132,8 +132,9 @@ static void tegra_fiq_unmask(struct irq_data *d)
 	base = ictlr_reg_base[leg_irq >> 5];
 	writel(1 << (leg_irq & 31), base + ICTLR_CPU_IER_SET(0));
 }
-#endif
+#endif /* FOR MY REFERENCE */
 
+#if !defined(CONFIG_TEGRA_USE_SECURE_KERNEL)
 void tegra_fiq_enable(int irq)
 {
 #if defined(CONFIG_ARCH_TEGRA_12x_SOC)
@@ -154,7 +155,20 @@ void tegra_fiq_enable(int irq)
 	}
 #endif
 }
+#else
+void tegra_fiq_enable(int irq)
+{
+	/* enable FIQ */
+	u32 val = readl(gic_cpu_base + GIC_CPU_CTRL);
+	val &= ~8; /* pass FIQs through */
+	val |= 2; /* enableNS */
+	writel(val, gic_cpu_base + GIC_CPU_CTRL);
+	tegra_legacy_select_fiq(irq, true);
+	tegra_fiq_unmask(irq_get_irq_data(irq));
+}
+#endif /* CONFIG_TEGRA_USE_SECURE_KERNEL */
 
+#if !defined(CONFIG_TEGRA_USE_SECURE_KERNEL)
 void tegra_fiq_disable(int irq)
 {
 #if defined(CONFIG_ARCH_TEGRA_12x_SOC)
@@ -168,6 +182,13 @@ void tegra_fiq_disable(int irq)
 	}
 #endif
 }
+#else
+void tegra_fiq_disable(int irq)
+{
+	tegra_fiq_mask(irq_get_irq_data(irq));
+	tegra_legacy_select_fiq(irq, false);
+}
+#endif /* CONFIG_TEGRA_USE_SECURE_KERNEL */
 #endif /* CONFIG_FIQ */
 
 #if defined(CONFIG_HOTPLUG_CPU) || defined(CONFIG_PM_SLEEP)
