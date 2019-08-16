@@ -33,28 +33,31 @@
 				nvidia,dsi-refresh-rate = <60>;
 				nvidia,dsi-video-data-type = <TEGRA_DSI_VIDEO_TYPE_VIDEO_MODE>;
 				nvidia,dsi-video-clock-mode = <TEGRA_DSI_VIDEO_CLOCK_TX_ONLY>;
-				nvidia,dsi-video-burst-mode = <TEGRA_DSI_VIDEO_NONE_BURST_MODE>;
+				nvidia,dsi-video-burst-mode = <TEGRA_DSI_VIDEO_NONE_BURST_MODE_WITH_SYNC_END>;
 				nvidia,dsi-virtual-channel = <TEGRA_DSI_VIRTUAL_CHANNEL_0>;
 				nvidia,dsi-panel-reset = <TEGRA_DSI_ENABLE>;
 				nvidia,dsi-power-saving-suspend = <TEGRA_DSI_ENABLE>;
 				nvidia,dsi-ulpm-not-support = <TEGRA_DSI_ENABLE>;
+				nvidia,panel-bl-pwm-gpio = <&gpio TEGRA_GPIO(H, 1) 0>; /* PH1 */
+				nvidia,panel-rst-gpio = <&gpio TEGRA_GPIO(H, 3) 0>; /* PH3 */
+				nvidia,dsi-te-gpio = <&gpio TEGRA_GPIO(R, 6) 0>;
 				nvidia,dsi-init-cmd = <TEGRA_DSI_DELAY_MS 160>,
-					<TEGRA_DSI_PACKET_CMD DSI_DCS_WRITE_0_PARAM 0x00 0x01 0x00>,
+					<TEGRA_DSI_PACKET_CMD DSI_DCS_WRITE_0_PARAM 0x01 0x00 0x00>,
 					<TEGRA_DSI_DELAY_MS 5>,
-					<TEGRA_DSI_PACKET_CMD DSI_GENERIC_SHORT_WRITE_2_PARAMS 0x0 0xB0 0x0>,
-					<TEGRA_DSI_PACKET_CMD DSI_GENERIC_LONG_WRITE 0x6 0x0 0x0 0x0 0x22 0x0 0x8 0x14 0xB3 0x00 0x00>,
-					<TEGRA_DSI_PACKET_CMD DSI_GENERIC_LONG_WRITE 0x2 0x0 0x0 0xC 0xB4 0x0 0x0>,
-					<TEGRA_DSI_PACKET_CMD DSI_GENERIC_LONG_WRITE 0x3 0x0 0x0 0xD3 0x3A 0xB6 0x0 0x0>,
-					<TEGRA_DSI_PACKET_CMD DSI_DCS_WRITE_1_PARAM 0x77 0x3A 0x0>,
-					<TEGRA_DSI_PACKET_CMD DSI_DCS_LONG_WRITE 0x5 0x0 0x0 0xAF 0x4 0x0 0x0 0x2A 0x0 0x0>,
-					<TEGRA_DSI_PACKET_CMD DSI_DCS_LONG_WRITE 0x5 0x0 0x0 0x7F 0x7 0x0 0x0 0x2B 0x0 0x0>,
+					<TEGRA_DSI_PACKET_CMD DSI_GENERIC_SHORT_WRITE_2_PARAMS 0xB0 0x0 0x0>,
+					<TEGRA_DSI_PACKET_CMD DSI_GENERIC_LONG_WRITE 0x6 0x0 0x0 0xB3 0x14 0x08 0x00 0x22 0x00 0x00 0x00>,
+					<TEGRA_DSI_PACKET_CMD DSI_GENERIC_LONG_WRITE 0x2 0x0 0x0 0xB4 0x0C 0x0 0x0>,
+					<TEGRA_DSI_PACKET_CMD DSI_GENERIC_LONG_WRITE 0x3 0x0 0x0 0xB6 0x3A 0xD3 0x0 0x0>,
+					<TEGRA_DSI_PACKET_CMD DSI_DCS_WRITE_1_PARAM 0x3A 0x77 0x0>,
+					<TEGRA_DSI_PACKET_CMD DSI_DCS_LONG_WRITE 0x5 0x0 0x0 0x2A 0x00 0x00 0x04 0xAF 0x0 0x0>,
+					<TEGRA_DSI_PACKET_CMD DSI_DCS_LONG_WRITE 0x5 0x0 0x0 0x2B 0x00 0x00 0x07 0x7F 0x0 0x0>,
 					<TEGRA_DSI_PACKET_CMD DSI_DCS_WRITE_0_PARAM DSI_DCS_EXIT_SLEEP_MODE 0x00 0x00>,
 					<TEGRA_DSI_SEND_FRAME 5>,
 					<TEGRA_DSI_DELAY_MS 20>,
 					<TEGRA_DSI_PACKET_CMD DSI_DCS_WRITE_0_PARAM DSI_DCS_SET_DISPLAY_ON 0x00 0x00>,
 					<TEGRA_DSI_DELAY_MS 120>;
 				nvidia,dsi-n-init-cmd = <15>;
-				nvidia,dsi-suspend-cmd = <TEGRA_DSI_PACKET_CMD DSI_DCS_WRITE_0_PARAM DSI_DCS_SET_DISPLAY_OFF 0x00>,
+				nvidia,dsi-suspend-cmd = <TEGRA_DSI_PACKET_CMD DSI_DCS_WRITE_0_PARAM DSI_DCS_SET_DISPLAY_OFF 0x00 0x00>,
 					<TEGRA_DSI_PACKET_CMD DSI_DCS_WRITE_0_PARAM DSI_DCS_ENTER_SLEEP_MODE 0x00 0x00>,
 					<TEGRA_DSI_DELAY_MS 60>;
 				nvidia,dsi-n-suspend-cmd = <3>;
@@ -242,6 +245,7 @@
 			};
 		};
 	};
+
 	backlight {
 		compatible = "pwm-backlight";
 		status = "okay";
