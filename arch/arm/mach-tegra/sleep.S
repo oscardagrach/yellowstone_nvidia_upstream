@@ -212,7 +212,7 @@ ENTRY(tegra_sleep_cpu_finish)
     mov     r4, r0
 #if defined(CONFIG_TEGRA_USE_SECURE_KERNEL)
     ldr     r0, =0x84000001
-	ldr	r1, =((1 << 16) | 4)
+	ldr		r1, =((1 << 16) | 4)
     ldr     r2, =TEGRA_RESET_HANDLER_BASE
     bl      tegra_sm_generic
 #endif /* CONFIG_TEGRA_USE_SECURE_KERNEL */

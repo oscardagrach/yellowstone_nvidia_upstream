@@ -27,8 +27,10 @@
 
 static void (*tegra_hotplug_shutdown)(void);
 
+
 int tegra_cpu_kill(unsigned int cpu)
 {
+#if !defined(CONFIG_TEGRA_USE_SECURE_KERNEL)
 #if defined(CONFIG_ARM_PSCI)
 	int err, i;
 #endif
@@ -64,6 +66,12 @@ int tegra_cpu_kill(unsigned int cpu)
 
 	/* Make cpu_kill() fail. */
 	return 0;
+#endif /* CONFIG_TEGRA_USE_SECURE_KERNEL */
+
+	cpu = cpu_logical_map(cpu);
+	tegra_wait_cpu_in_reset(cpu);
+	tegra_disable_cpu_clock(cpu);
+	return 1;
 }
 
 /*
