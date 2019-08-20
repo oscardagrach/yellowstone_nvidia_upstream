@@ -596,7 +596,6 @@ static void dsi_j_wuxga_7_dc_out_init(struct tegra_dc_out *dc)
 	dc->width = 94;
 	dc->height = 151;
 	dc->flags = DC_CTRL_MODE;
-	dc->rotation = 270;
 }
 
 static void dsi_j_wuxga_7_fb_data_init(struct tegra_fb_data *fb)
