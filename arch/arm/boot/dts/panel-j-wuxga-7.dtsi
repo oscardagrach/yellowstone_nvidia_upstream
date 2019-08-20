@@ -69,6 +69,7 @@
 					nvidia,out-parent-clk = "pll_d_out0";
 					nvidia,out-xres = <1200>;
 					nvidia,out-yres = <1920>;
+					nvidia,out-rotation = <270>;
 				};
 				display-timings {
 					1200x1920-32 {
